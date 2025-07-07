@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Caltrack Webapp</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --card-bg: #ffffff;
+      --text: #000000;
+      --primary: #0077cc;
+      --primary-hover: #005fa3;
+    }
+    body { background: var(--bg); color: var(--text); font-family: sans-serif; padding: 20px; }
+    body.dark { --bg: #121212; --card-bg: #1e1e1e; --text: #ffffff; --primary: #66ccff; --primary-hover: #44aadd; }
+    body.green { --primary: #4caf50; --primary-hover: #388e3c; }
+    body.purple { --primary: #9c27b0; --primary-hover: #7b1fa2; }
+    body.sunset { --primary: #ff7043; --primary-hover: #f4511e; }
+    button { background: var(--primary); color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; margin: 4px; }
+    button:hover { background: var(--primary-hover); }
+    .card { background: var(--card-bg); padding: 15px; border-radius: 8px; margin: 10px 0; }
+  </style>
+</head>
+<body>
+  <h1>🎽 Caltrack Webapp</h1>
+  <div class="card"><h3>Add Food</h3><input type="text" id="foodName" placeholder="Food Name">
+  <input type="number" id="foodCalories" placeholder="Calories">
+  <button onclick="addFood()">Add</button><ul id="foodList"></ul>
+  <button onclick="clearLog()">Clear Log</button></div>
+  <div class="card"><h3>Workout Timer</h3><div id="timer">Time: 0m 0s</div>
+  <button onclick="startTimer()">Start</button><button onclick="markComplete()">Complete</button></div>
+  <div class="card"><h3>Themes</h3>
+  <button onclick="setTheme('default')">Default</button>
+  <button onclick="setTheme('dark')">Dark</button>
+  <button onclick="setTheme('green')">Green</button>
+  <button onclick="setTheme('purple')">Purple</button>
+  <button onclick="setTheme('sunset')">Sunset</button></div>
+  <div class="card"><h3>Spotify</h3>
+  <iframe id="spotifyPlayer" src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M" width="100%" height="80" frameborder="0" allowtransparency="true" allow="encrypted-media"></iframe>
+  <button id="spotifyRefresh">Refresh Spotify</button></div>
+<script>
+let totalCalories = parseInt(localStorage.getItem('totalCalories')) || 0;
+let calorieGoal = 2000;
+let timerInterval, secondsElapsed = 0;
+function markComplete(){showToast('Workout marked complete!');}
+function startTimer(){clearInterval(timerInterval);secondsElapsed=0;timerInterval=setInterval(()=>{secondsElapsed++;const m=Math.floor(secondsElapsed/60);const s=secondsElapsed%60;document.getElementById('timer').textContent=`Time: ${m}m ${s}s`;},1000);}
+function addFood(){const n=document.getElementById('foodName').value,c=parseInt(document.getElementById('foodCalories').value);if(n&&c){const l=document.createElement('li');l.textContent=`${n}: ${c} kcal`;document.getElementById('foodList').appendChild(l);totalCalories+=c;localStorage.setItem('totalCalories',totalCalories);let g=JSON.parse(localStorage.getItem('foodLog'))||[];g.push({name:n,cal:c});localStorage.setItem('foodLog',JSON.stringify(g));document.getElementById('foodName').value='';document.getElementById('foodCalories').value='';showToast(`${n} added: ${c} kcal`);checkCalorieGoal();}else{alert('Enter both food name and calories');}}
+function checkCalorieGoal(){if(totalCalories>=calorieGoal){showToast('🎉 Calorie goal reached!');}}
+function clearLog(){if(confirm("Clear today's log?")){localStorage.removeItem('foodLog');localStorage.removeItem('totalCalories');totalCalories=0;document.getElementById('foodList').innerHTML='';showToast('Food log cleared');}}
+function showToast(m){const t=document.createElement('div');t.textContent=m;t.style.position='fixed';t.style.bottom='20px';t.style.left='50%';t.style.transform='translateX(-50%)';t.style.background='var(--primary)';t.style.color='white';t.style.padding='12px 20px';t.style.borderRadius='8px';t.style.boxShadow='0 2px 8px rgba(0,0,0,0.2)';t.style.zIndex='1000';document.body.appendChild(t);setTimeout(()=>{t.remove();},2000);}
+function setTheme(th){document.body.classList.remove('green','purple','sunset','dark');if(th!=='default'){document.body.classList.add(th);}localStorage.setItem('selectedTheme',th);showToast(`Theme set to ${th.charAt(0).toUpperCase()+th.slice(1)}`);}
+document.addEventListener('DOMContentLoaded',()=>{const s=localStorage.getItem('selectedTheme')||'default';setTheme(s);document.getElementById('spotifyRefresh').addEventListener('click',()=>{const f=document.getElementById('spotifyPlayer');f.src=f.src;});});
+</script></body></html>
