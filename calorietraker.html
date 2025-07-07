@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CalTrack+ Clean</title>
+  <style>
+    :root {
+      --bg: #f9f9f9;
+      --card-bg: #fff;
+      --text: #000;
+      --primary: #0077cc;
+      --primary-hover: #005fa3;
+    }
+    body.dark {
+      --bg: #121212;
+      --card-bg: #1e1e1e;
+      --text: #fff;
+      --primary: #66ccff;
+      --primary-hover: #44aadd;
+    }
+    body {
+      font-family: sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      margin: 0;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+    h1 {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 16px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: var(--primary-hover);
+    }
+    .accordion {
+      background: var(--card-bg);
+      border-radius: 12px;
+      margin-bottom: 10px;
+      padding: 15px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      user-select: none;
+      font-weight: bold;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .panel {
+      background: var(--card-bg);
+      padding: 0 15px 15px 15px;
+      display: none;
+      border-radius: 0 0 12px 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .panel.show {
+      display: block;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      margin: 6px 0;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+    ul {
+      list-style: none;
+      padding-left: 0;
+      max-height: 150px;
+      overflow-y: auto;
+      margin: 10px 0;
+    }
+    li {
+      border-bottom: 1px solid #eee;
+      padding: 6px 0;
+    }
+    iframe {
+      width: 100%;
+      border-radius: 12px;
+      height: 300px;
+      border: none;
+      margin-top: 10px;
+    }
+    #timer {
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    /* Icon for accordion */
+    .accordion::after {
+      content: '+';
+      font-weight: bold;
+      font-size: 18px;
+      transition: transform 0.3s ease;
+    }
+    .accordion.active::after {
+      content: '-';
+    }
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h1>CalTrack+</h1>
+  <button onclick="toggleDarkMode()">Toggle Dark Mode</button>
+
+  <!-- User Profiles -->
+  <div id="userSection">
+    <div class="accordion">User Profiles</div>
+    <div class="panel">
+      <select id="profileSelect" onchange="switchProfile()">
+        <option value="">-- Select Profile --</option>
+      </select>
+      <input type="text" id="newProfileName" placeholder="New profile name" />
+      <button onclick="createProfile()">Create Profile</button>
+      <button onclick="deleteProfile()" style="background:#ff5c5c;">Delete Selected Profile</button>
+    </div>
+  </div>
+
+  <!-- Calorie Tracker -->
+  <div id="calorieSection">
+    <div class="accordion">Calorie Tracking</div>
+    <div class="panel">
+      <label>Calorie Goal</label>
+      <input type="number" id="calorieGoal" disabled />
+      <h3 id="totalCalories">0 / 0 kcal</h3>
+      <input type="text" id="foodName" placeholder="Food name" disabled />
+      <input type="number" id="foodCalories" placeholder="Calories (kcal)" disabled />
+      <button onclick="addFood()" disabled>Add Food</button>
+      <ul id="foodList"></ul>
+      <button onclick="clearLog()" style="background:#ff5c5c;" disabled>Clear Log</button>
+    </div>
+  </div>
+
+  <!-- Workouts -->
+  <div id="workoutSection">
+    <div class="accordion">Workouts & Timer</div>
+    <div class="panel">
+      <select id="workoutSelect" onchange="showWorkout()" disabled>
+        <option value="">-- Select a workout --</option>
+        <option value="beginner">Beginner Walk/Jog</option>
+        <option value="interval">HIIT Intervals</option>
+        <option value="fatburn">Fat Burning Steady</option>
+        <option value="hillclimb">Hill Climb Challenge</option>
+        <option value="longrun">Long Endurance Run</option>
+        <option value="speed">Speed Ladder</option>
+        <option value="inclineHIIT">Incline HIIT</option>
+        <option value="stationaryBike">Stationary Bike Ride</option>
+      </select>
+      <div id="workoutDetails" style="margin-top:10px;"></div>
+      <button onclick="markComplete()" disabled>Mark Workout Complete</button>
+      <div id="timer"></div>
+      <button onclick="startTimer()" disabled>Start Timer</button>
+    </div>
+  </div>
+
+  <!-- Spotify -->
+  <div id="spotifySection">
+    <div class="accordion">Spotify Playlist</div>
+    <div class="panel">
+      <input type="text" id="spotifyUrl" placeholder="Paste public playlist URL here" />
+      <button onclick="loadSpotifyPlaylist()">Load Playlist</button>
+      <button onclick="refreshPlaylist()">Refresh Playlist</button>
+      <iframe id="spotifyPlayer" src="https://open.spotify.com/embed/playlist/37i9dQZF1DXcBWIGoYBM5M" allow="encrypted-media"></iframe>
+    </div>
+  </div>
+
+  <!-- Notifications -->
+  <div id="notificationsSection">
+    <div class="accordion">Notifications</div>
+    <div class="panel">
+      <button id="notifyBtn" onclick="enableNotifications()">Enable Hourly Reminders</button>
+      <p id="notifyStatus" style="font-style: italic; margin-top: 10px;"></p>
+    </div>
+  </div>
+
+  <!-- Motivational Quote -->
+  <div id="quoteSection">
+    <div class="accordion">Motivational Quote</div>
+    <div class="panel" style="padding-bottom: 20px;">
+      <p id="quoteText" style="font-style: italic; font-size: 1.1em;">Loading...</p>
+      <button onclick="showQuote()">New Quote</button>
+    </div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+  // Accordion toggles
+  document.querySelectorAll('.accordion').forEach(acc => {
+    acc.addEventListener('click', () => {
+      acc.classList.toggle('active');
+      const panel = acc.nextElementSibling;
+      panel.classList.toggle('show');
+    });
+  });
+
+  // Globals
+  let currentProfile = null;
+  let totalCalories = 0;
+  let calorieGoal = 2200;
+  let timerInterval = null;
+  let secondsElapsed = 0;
+
+  const profileSelect = document.getElementById("profileSelect");
+  const calorieGoalInput = document.getElementById("calorieGoal");
+  const foodNameInput = document.getElementById("foodName");
+  const foodCaloriesInput = document.getElementById("foodCalories");
+  const addFoodBtn = document.querySelector("button[onclick='addFood()']");
+  const clearLogBtn = document.querySelector("button[onclick='clearLog()']");
+  const workoutSelect = document.getElementById("workoutSelect");
+  const markCompleteBtn = document.querySelector("button[onclick='markComplete()']");
+  const startTimerBtn = document.querySelector("button[onclick='startTimer()']");
+  const totalCaloriesDisplay = document.getElementById("totalCalories");
+  const workoutDetails = document.getElementById("workoutDetails");
+  const timerDisplay = document.getElementById("timer");
+  const notifyStatus = document.getElementById("notifyStatus");
+
+  // Profiles
+  function populateProfileSelect() {
+    let profiles = JSON.parse(localStorage.getItem("profiles") || "[]");
+    profileSelect.innerHTML = '<option value="">-- Select Profile --</option>';
+    profiles.forEach(p => {
+      const opt = document.createElement('option');
+      opt.value = p;
+      opt.textContent = p;
+      profileSelect.appendChild(opt);
+    });
+  }
+
+  function createProfile() {
+    const newName = document.getElementById("newProfileName").value.trim();
+    if (!newName) {
+      alert("Enter a profile name");
+      return;
+    }
+    let profiles = JSON.parse(localStorage.getItem("profiles") || "[]");
+    if (profiles.includes(newName)) {
+      alert("Profile name already exists");
+      return;
+    }
+    profiles.push(newName);
+    localStorage.setItem("profiles", JSON.stringify(profiles));
+    document.getElementById("newProfileName").value = "";
+    populateProfileSelect();
+    profileSelect.value = newName;
+    switchProfile();
+  }
+
+  function deleteProfile() {
+    if (!currentProfile) {
+      alert("Select a profile to delete");
+      return;
+    }
+    if (!confirm(`Delete profile "${currentProfile}"? This cannot be undone.`)) return;
+    let profiles = JSON.parse(localStorage.getItem("profiles") || "[]");
+    profiles = profiles.filter(p => p !== currentProfile);
+    localStorage.setItem("profiles", JSON.stringify(profiles));
+    // Remove profile-specific data
+    localStorage.removeItem(`${currentProfile}_calorieGoal`);
+    localStorage.removeItem(`${currentProfile}_foodLog`);
+    localStorage.removeItem(`${currentProfile}_totalCalories`);
+    localStorage.removeItem(`${currentProfile}_progress`);
+    currentProfile = null;
+    populateProfileSelect();
+    switchProfile();
+  }
+
+  function switchProfile() {
+    currentProfile = profileSelect.value;
+    if (!currentProfile) {
+      calorieGoalInput.disabled = true;
+      foodNameInput.disabled = true;
+      foodCaloriesInput.disabled = true;
+      addFoodBtn.disabled = true;
+      clearLogBtn.disabled = true;
+      workoutSelect.disabled = true;
+      markCompleteBtn.disabled = true;
+      startTimerBtn.disabled = true;
+      calorieGoalInput.value = '';
+      foodNameInput.value = '';
+      foodCaloriesInput.value = '';
+      totalCaloriesDisplay.textContent = '0 / 0 kcal';
+      workoutDetails.textContent = '';
+      clearLog();
+      updateProgressChart();
+      return;
+    }
+    calorieGoalInput.disabled = false;
+    foodNameInput.disabled = false;
+    foodCaloriesInput.disabled = false;
+    addFoodBtn.disabled = false;
+    clearLogBtn.disabled = false;
+    workoutSelect.disabled = false;
+    markCompleteBtn.disabled = false;
+    startTimerBtn.disabled = false;
+
+    calorieGoal = parseInt(localStorage.getItem(`${currentProfile}_calorieGoal`)) || 2200;
+    calorieGoalInput.value = calorieGoal;
+    loadFoodLog();
+    updateCalorieDisplay();
+    updateProgressChart();
+  }
+
+  // Calories
+  function updateCalorieGoal() {
+    if (!currentProfile) return;
+    calorieGoal = parseInt(calorieGoalInput.value);
+    localStorage.setItem(`${currentProfile}_calorieGoal`, calorieGoal);
+    updateCalorieDisplay();
+    updateProgressChart();
+  }
+
+  function addFood() {
+    if (!currentProfile) return;
+    const name = foodNameInput.value.trim();
+    const cal = parseInt(foodCaloriesInput.value);
+    if (!name || !cal || cal <= 0) {
+      alert('Enter valid food name and calories');
+      return;
+    }
+    let foodLog = JSON.parse(localStorage.getItem(`${currentProfile}_foodLog`) || "[]");
+    foodLog.push({ name, cal });
+    localStorage.setItem(`${currentProfile}_foodLog`, JSON.stringify(foodLog));
+    totalCalories += cal;
+    localStorage.setItem(`${currentProfile}_totalCalories`, totalCalories);
+    foodNameInput.value = '';
+    foodCaloriesInput.value = '';
+    loadFoodLog();
+    updateCalorieDisplay();
+    saveDailyCalories(formatDate(new Date()), totalCalories);
+    updateProgressChart();
+  }
+
+  function loadFoodLog() {
+    if (!currentProfile) return;
+    let foodLog = JSON.parse(localStorage.getItem(`${currentProfile}_foodLog`) || "[]");
+    totalCalories = foodLog.reduce((sum, f) => sum + f.cal, 0);
+    const foodList = document.getElementById('foodList');
+    foodList.innerHTML = '';
+    foodLog.forEach(item => {
+      const li = document.createElement('li');
+      li.textContent = `${item.name}: ${item.cal} kcal`;
+      foodList.appendChild(li);
+    });
+    updateCalorieDisplay();
+  }
+
+  function updateCalorieDisplay() {
+    totalCaloriesDisplay.textContent = `${totalCalories} / ${calorieGoal} kcal`;
+  }
+
+  function clearLog() {
+    if (!currentProfile) return;
+    if (!confirm("Clear today's log?")) return;
+    localStorage.removeItem(`${currentProfile}_foodLog`);
+    localStorage.removeItem(`${currentProfile}_totalCalories`);
+    totalCalories = 0;
+    loadFoodLog();
+    updateCalorieDisplay();
+    saveDailyCalories(formatDate(new Date()), totalCalories);
+    updateProgressChart();
+  }
+
+  // Workouts
+  function showWorkout() {
+    if (!currentProfile) return;
+    const routine = workoutSelect.value;
+    let details = '';
+    switch (routine) {
+      case 'beginner':
+        details = `<b>Beginner Walk/Jog:</b><br>20 min walk at 5 km/h, then 10 min jog at 7 km/h.`;
+        break;
+      case 'interval':
+        details = `<b>HIIT Intervals:</b><br>1 min sprint at 12 km/h, 2 min walk at 5 km/h, repeat 6x.`;
+        break;
+      case 'fatburn':
+        details = `<b>Fat Burning Steady:</b><br>40 min at 6 km/h with 2% incline.`;
+        break;
+      case 'hillclimb':
+        details = `<b>Hill Climb Challenge:</b><br>Start at 5 km/h, increase incline by 1% every 3 minutes for 30 minutes.`;
+        break;
+      case 'longrun':
+        details = `<b>Long Endurance Run:</b><br>60 minutes at 7 km/h with a steady 1% incline.`;
+        break;
+      case 'speed':
+        details = `<b>Speed Ladder:</b><br>Increase speed by 0.5 km/h every 2 minutes, from 6 to 12 km/h, then back.`;
+        break;
+      case 'inclineHIIT':
+        details = `<b>Incline HIIT:</b><br>2 min walk at 6 km/h @ 8% incline, 1 min jog at 8 km/h flat, repeat 8x.`;
+        break;
+      case 'stationaryBike':
+        details = `<b>Stationary Bike Ride:</b><br>30 minutes at moderate resistance, steady pace.`;
+        break;
+      default:
+        details = '';
+    }
+    workoutDetails.innerHTML = details;
+  }
+
+  function markComplete() {
+    alert("Workout marked complete! Great job!");
+  }
+
+  // Timer
+  function startTimer() {
+    clearInterval(timerInterval);
+    secondsElapsed = 0;
+    timerInterval = setInterval(() => {
+      secondsElapsed++;
+      const mins = Math.floor(secondsElapsed / 60);
+      const secs = secondsElapsed % 60;
+      timerDisplay.textContent = `Time: ${mins}m ${secs}s`;
+    }, 1000);
+  }
+
+  // Motivational Quotes
+  const quotes = [
+    "Push yourself because no one else is going to do it for you.",
+    "Sweat is just fat crying.",
+    "The pain you feel today will be the strength you feel tomorrow.",
+    "Don’t limit your challenges, challenge your limits.",
+    "Strive for progress, not perfection.",
+    "Your body can stand almost anything. It’s your mind you have to convince."
+  ];
+
+  function showQuote() {
+    const idx = Math.floor(Math.random() * quotes.length);
+    document.getElementById("quoteText").textContent = quotes[idx];
+  }
+
+  // Spotify Playlist embed handling
+  const spotifyPlayer = document.getElementById("spotifyPlayer");
+
+  function loadSpotifyPlaylist() {
+    const url = document.getElementById("spotifyUrl").value.trim();
+    if (!url) {
+      alert("Enter a Spotify public playlist URL");
+      return;
+    }
+    // Extract playlist ID from URL
+    const match = url.match(/playlist\/([a-zA-Z0-9]+)/);
+    if (!match) {
+      alert("Invalid Spotify playlist URL");
+      return;
+    }
+    const playlistId = match[1];
+    spotifyPlayer.src = `https://open.spotify.com/embed/playlist/${playlistId}`;
+  }
+
+  function refreshPlaylist() {
+    // Reload iframe by resetting src
+    const src = spotifyPlayer.src;
+    spotifyPlayer.src = "";
+    setTimeout(() => {
+      spotifyPlayer.src = src;
+    }, 100);
+  }
+
+  // Dark mode toggle
+  function toggleDarkMode() {
+    document.body.classList.toggle("dark");
+  }
+
+  // Notifications
+  let notificationIntervalId = null;
+
+  function enableNotifications() {
+    if (!("Notification" in window)) {
+      alert("This browser does not support notifications.");
+      return;
+    }
+    if (Notification.permission === "granted") {
+      startNotificationInterval();
+    } else if (Notification.permission !== "denied") {
+      Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+          startNotificationInterval();
+        } else {
+          alert("Notifications permission denied");
+        }
+      });
+    } else {
+      alert("Notifications permission denied");
+    }
+  }
+
+  function startNotificationInterval() {
+    notifyStatus.textContent = "Hourly reminders enabled.";
+    if (notificationIntervalId) clearInterval(notificationIntervalId);
+    notificationIntervalId = setInterval(() => {
+      new Notification("CalTrack+ Reminder", {
+        body: "Time to check your workout and calorie goals!",
+      });
+    }, 3600000); // every hour
+  }
+
+  // Utility - format date YYYY-MM-DD
+  function formatDate(date) {
+    return date.toISOString().split('T')[0];
+  }
+
+  // Progress chart using Chart.js
+  let progressChart = null;
+
+  function saveDailyCalories(dateStr, calories) {
+    if (!currentProfile) return;
+    let progress = JSON.parse(localStorage.getItem(`${currentProfile}_progress`) || "{}");
+    progress[dateStr] = calories;
+    localStorage.setItem(`${currentProfile}_progress`, JSON.stringify(progress));
+  }
+
+  function loadProgressData() {
+    if (!currentProfile) return {};
+    return JSON.parse(localStorage.getItem(`${currentProfile}_progress`) || "{}");
+  }
+
+  function updateProgressChart() {
+    const ctxId = "progressChartCanvas";
+    let canvas = document.getElementById(ctxId);
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.id = ctxId;
+      canvas.style.marginTop = "20px";
+      document.getElementById("calorieSection").appendChild(canvas);
+    }
+    const progress = loadProgressData();
+    const dates = Object.keys(progress).sort();
+    const calories = dates.map(d => progress[d]);
+
+    if (progressChart) {
+      progressChart.data.labels = dates;
+      progressChart.data.datasets[0].data = calories;
+      progressChart.update();
+    } else {
+      progressChart = new Chart(canvas.getContext("2d"), {
+        type: "line",
+        data: {
+          labels: dates,
+          datasets: [{
+            label: "Calories Consumed",
+            data: calories,
+            borderColor: "rgba(0, 119, 204, 0.8)",
+            backgroundColor: "rgba(0, 119, 204, 0.3)",
+            fill: true,
+            tension: 0.3,
+          }]
+        },
+        options: {
+          scales: {
+            y: { beginAtZero: true }
+          }
+        }
+      });
+    }
+  }
+
+  // Initialization
+  populateProfileSelect();
+  switchProfile();
+  showQuote();
+
+  // Enable saving calorie goal on input change
+  calorieGoalInput.addEventListener("change", updateCalorieGoal);
+
+</script>
+</body>
+</html>
